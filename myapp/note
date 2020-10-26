@@ -1,0 +1,15 @@
+form checkout
+
+name (ชื่อผู้รับ) [char]
+tel (เบอร์โทร) [char]
+address (ที่อยู่จัดส่ง) [text]
+
+shipping [char: radio]
+	- EMS
+	- ลงทะเบียน
+sp_cost = [int: calculate]
+payment [char: radio]
+	- โอนเงิน
+	- เก็บเงินปลายทาง
+other [text]
+	- หมายเหตุ

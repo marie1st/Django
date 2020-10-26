@@ -1,0 +1,99 @@
+{% extends 'myapp/base.html' %}
+
+
+{% block content %}
+ 
+
+      <h3>สินค้าล่าสุด</h3>
+      <p>สินค้าล่าสุดของร้าน</p>
+
+      <div class="container-fluid">
+
+        <div class="row">
+            {% for pd in product %}
+              <div class="col-sm-4">
+                        <div class="card" style="width:300px; height: 550px">
+
+                          {% if pd.image %}
+                              <img class="card-img-top" src="{{ pd.image.url }}" width="400" style="width: 300px; height: 200px; overflow: hidden;">
+                          {% elif pd.imageurl != None %}
+                              <img class="card-img-top" src="{{ pd.imageurl }}" width="400"  style="width: 300px; height: 200px; overflow: hidden;">
+                          {% else %}
+                              <img class="card-img-top" src="/media/default.png" width="400"  style="width: 300px; height: 200px; overflow: hidden;">
+
+
+                          {% endif %}
+                          
+                          <div class="card-body">
+                            <h1 class="card-title">{{ pd.name }}</h1>
+                            <p>ราคา {{pd.price}} บาท/{{pd.unit}}</p>
+                            <p>{{pd.detail|linebreaks|truncatechars_html:100}}</p>
+
+                            {% if pd.quantity > 0 %}
+                                <p>สินค้ามีในสต็อก: {{ pd.quantity }} {{pd.unit}}</p>
+                            {% else %}
+                                <p><font color="red">สินค้าอาจจะหมดสต็อก กรุณาติดต่อแอดมิน</font></p>
+                            {% endif %}
+
+                            {% if pd.instock == True %}
+                                  <a href="#" class="btn btn-success" >สั่งซื้อ</a>
+                            {% else %}
+                                  <a href="#" class="btn btn-warning" >สินค้าหมดแล้ว</a>
+                            {% endif %}
+                        </div>
+                      </div>
+                            <br><br>
+              </div>
+            {% endfor %}
+        </div>
+      </div>
+
+      <div class="container">
+        <center> <a href="{% url 'allproduct-page' %}"><h1>ดูสินค้าทั้งหมด</h1></a> </center>
+        <hr>
+      </div>
+
+
+      <h3>สินค้าขายดี (ต้อง preorder)</h3>
+      <p>preorder ล่วงหน้า 20 วัน</p>
+
+      <div class="container-fluid">
+
+        <div class="row">
+            {% for pd in preorder %}
+              <div class="col-sm-4">
+                        <div class="card" style="width:300px; height: 550px">
+
+                          {% if pd.image %}
+                              <img class="card-img-top" src="{{ pd.image.url }}" width="400" style="width: 300px; height: 200px; overflow: hidden;">
+                          {% elif pd.imageurl != None %}
+                              <img class="card-img-top" src="{{ pd.imageurl }}" width="400"  style="width: 300px; height: 200px; overflow: hidden;">
+                          {% else %}
+                              <img class="card-img-top" src="/media/default.png" width="400"  style="width: 300px; height: 200px; overflow: hidden;">
+
+
+                          {% endif %}
+                          
+                          <div class="card-body">
+                            <h1 class="card-title">{{ pd.name }}</h1>
+                            <p>ราคา {{pd.price}} บาท/{{pd.unit}}</p>
+                            <p>{{pd.detail|linebreaks|truncatechars_html:100}}</p>
+
+                            {% if pd.quantity > 0 %}
+                                <p>สินค้ามีในสต็อก: {{ pd.quantity }} {{pd.unit}}</p>
+                            {% else %}
+                                <p><font color="red">สินค้าหมดแล้ว พรีออร์เดอร์ได้</font></p>
+                                <a href="#" class="btn btn-warning" >Pre-Order</a>
+                            {% endif %}
+                        </div>
+                      </div>
+                            <br><br>
+              </div>
+            {% endfor %}
+        </div>
+      </div>
+
+{% endblock content %}
+
+
+
