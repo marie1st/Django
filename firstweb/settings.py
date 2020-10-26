@@ -57,8 +57,7 @@ ROOT_URLCONF = 'firstweb.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # 'DIRS': [os.path.join(BASE_DIR, 'myapp/template')],
-        'DIRS': ['myapp/template',],
+        'DIRS': [os.path.join(BASE_DIR, 'myapp/template')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
