@@ -12,6 +12,7 @@ class AllproductAdmin(admin.ModelAdmin):
 admin.site.register(Allproduct,AllproductAdmin)
 admin.site.register(Profile)
 admin.site.register(Cart)
+admin.site.register(Category)
 
 
 class OrderListAdmin(admin.ModelAdmin):
@@ -19,3 +20,4 @@ class OrderListAdmin(admin.ModelAdmin):
 
 admin.site.register(OrderList, OrderListAdmin)
 admin.site.register(OrderPending)
+admin.site.register(VerifyEmail)

@@ -6,6 +6,83 @@ from django.contrib.auth import authenticate, login
 from django.core.files.storage import FileSystemStorage
 from datetime import datetime
 
+### LINE NOTIFY
+from songline import Sendline # pip install songline
+token = '9xfgRuo7AKdrlu3EguavIzKTXf55niOmkWbw6jswRDr'
+messenger = Sendline(token)
+###### generate token#########
+import random
+def GenerateToken(domain='http://localhost:8000/confirm/'):
+	allchar = [ chr(i) for i in range(65,91)]
+	allchar.extend([chr(i) for i in range(97,123)])
+	allchar.extend([str(i) for i in range(10)])
+	emailtoken = ''
+	for i in range(40):
+		emailtoken += random.choice(allchar)
+
+	url = domain + emailtoken
+	#print(url)
+	return (url,emailtoken)
+
+def Confirm(request,token):
+	try:
+		check = VerifyEmail.objects.get(token=token)
+		status = 'found'
+		check.approved = True
+		check.save()
+		context = {'status':status,'username':check.user.username, 'name':check.user.first_name}
+	except:
+		status = 'notfound'
+		context = {'status':status}
+
+	return render(request, 'myapp/confirm.html',context)
+
+
+#######EMAIL########
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+def sendthai(sendto,subj="ทดสอบส่งเมลลล์",detail="สวัสดี!\nคุณสบายดีไหม?\n"):
+
+	myemail = 'uncle.django50@gmail.com'
+	mypassword = "c0'Fdh50"
+	receiver = sendto
+
+	msg = MIMEMultipart('alternative')
+	msg['Subject'] = subj
+	msg['From'] = 'Admin Uncle Fruit'
+	msg['To'] = receiver
+	text = detail
+
+	part1 = MIMEText(text, 'plain')
+	msg.attach(part1)
+
+	s = smtplib.SMTP('smtp.gmail.com:587')
+	s.ehlo()
+	s.starttls()
+
+	s.login(myemail, mypassword)
+	s.sendmail(myemail, receiver.split(','), msg.as_string())
+	s.quit()
+
+
+###########Start sending#############
+def EmailConfirm(email,name,token):
+	subject = 'ยืนยันการสมัคร Uncle Fruit'
+	newmember_name = name
+	content = '''
+	เนื่องจากความปลอดภัยของการเข้าใช้
+	กรุณายืนยันอีเมลล์ ผ่านลิ้งค์ด้านล่างนี้ 
+	'''
+	#link = 'http://uncle-engineer.com/confirm/fawtkataktaktkawkejtjka'
+	link = token
+
+	msg = 'สวัสดีคุณ {} \n\n {}\n Verify Link: {}'.format(newmember_name,content,link)
+	sendthai(email,subject,msg)
+
+###############
+
 # HttpResponse คือ ฟังชั่นสำหรับทำให้โชว์ข้อความหน้าเว็บได้
 
 def Home(request):
@@ -37,7 +114,7 @@ def AddProduct(request):
 		return redirect('home-page')
 
 
-	if request.method == 'POST' and request.FILES['imageupload']:
+	if request.method == 'POST':
 		data = request.POST.copy()
 		name = data.get('name')
 		price = data.get('price')
@@ -54,14 +131,17 @@ def AddProduct(request):
 		new.quantity = quantity
 		new.unit = unit
 		###########Save Image############
-		file_image = request.FILES['imageupload']
-		file_image_name = request.FILES['imageupload'].name.replace(' ','')
-		print('FILE_IMAGE:',file_image)
-		print('IMAGE_NAME:',file_image_name)
-		fs = FileSystemStorage()
-		filename = fs.save(file_image_name,file_image)
-		upload_file_url = fs.url(filename)
-		new.image = upload_file_url[6:]
+		try:
+			file_image = request.FILES['imageupload']
+			file_image_name = request.FILES['imageupload'].name.replace(' ','')
+			print('FILE_IMAGE:',file_image)
+			print('IMAGE_NAME:',file_image_name)
+			fs = FileSystemStorage()
+			filename = fs.save(file_image_name,file_image)
+			upload_file_url = fs.url(filename)
+			new.image = upload_file_url[6:]
+		except:
+			new.image = '/default.png' #หากไม่มีการอัพโหลด จะทำการดึงภาพ default มาใช้งาน
 		#######################
 		new.save()
 
@@ -77,6 +157,15 @@ def Product(request):
 	product = paginator.get_page(page)
 	context = {'product':product}
 	return render(request, 'myapp/allproduct.html',context)
+
+def ProductCategory(request,code):
+	select = Category.objects.get(id=code)
+	product = Allproduct.objects.filter(catname=select).order_by('id').reverse() #ดึงข้อมูลมาทั้งหมด
+	paginator = Paginator(product,2) # 1 หน้าโชว์แค่ 3 ชิ้นเท่านั้น
+	page = request.GET.get('page') # http://localhost:8000/allproduct/?page=2
+	product = paginator.get_page(page)
+	context = {'product':product,'catname':select.catname}
+	return render(request, 'myapp/allproductcat.html',context)
 
 
 def Register(request):
@@ -100,6 +189,17 @@ def Register(request):
 		profile = Profile()
 		profile.user = User.objects.get(username=email)
 		profile.save()
+
+		##### send email for verify #### **** <<<testing>>>
+		token,token_code = GenerateToken()
+		EmailConfirm(email,first_name,token)
+		getuser = User.objects.get(username=email)
+		addverify = VerifyEmail()
+		addverify.user = getuser
+		addverify.token = token_code
+		addverify.save()
+
+		#sendthai(email,subject,msg)
 
 		#from django.contrib.auth import authenticate, login
 		user = authenticate(username=email, password=password)
@@ -275,7 +375,8 @@ def Checkout(request):
 			mid = str(user.id).zfill(4)
 			dt = datetime.now().strftime('%Y%m%d%H%M%S')
 			orderid = 'OD' + mid + dt
-
+			productorder = ''
+			producttotal = 0
 			for pd in mycart:
 				order = OrderList()
 				order.orderid = orderid
@@ -285,7 +386,16 @@ def Checkout(request):
 				order.quantity = pd.quantity
 				order.total = pd.total
 				order.save()
+				productorder = productorder + '- {}\n'.format(pd.productname) #รายการสินค้า
+				producttotal += pd.total
 
+			# Send to LINE Notify in Group
+			texttoline = 'ODID: {}\n---\n{}ยอดรวม: {:,.2f} บาท\n ({})'.format(orderid,productorder,producttotal,name)
+			# เช็คยอดสินค้าว่ามากกว่า 10000 หรือไม่หากจริงจะส่งสติกเกอร์ไปด้วย
+			if producttotal > 10000:
+				messenger.sticker(14,1,texttoline)
+			else:
+				messenger.sendtext(texttoline)
 			#create order pending
 			odp = OrderPending()
 			odp.orderid = orderid
